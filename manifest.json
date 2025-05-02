@@ -4,9 +4,7 @@
   "version": "1.0",
   "description": "Automatically clock in and out on Keka at scheduled times",
   "permissions": ["storage", "alarms", "scripting", "tabs", "activeTab"],
-  "host_permissions": [
-    "https://newstreet.keka.com/*"
-  ],
+  "host_permissions": ["https://newstreet.keka.com/*"],
   "background": {
     "service_worker": "background.js"
   },
