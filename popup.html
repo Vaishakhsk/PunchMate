@@ -4,35 +4,82 @@
   <title>Keka Auto Clock In/Out</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      width: 300px;
-      padding: 15px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      width: 320px;
+      padding: 0;
+      margin: 0;
+      color: #333;
     }
     .container {
       display: flex;
       flex-direction: column;
-      gap: 15px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #4285f4;
+      color: white;
+      padding: 15px;
+      border-radius: 0 0 5px 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .content {
+      padding: 15px;
+    }
+    .section {
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #4285f4;
     }
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      font-weight: 500;
+      font-size: 14px;
     }
     .time-input {
       display: flex;
       gap: 10px;
       align-items: center;
     }
+    .time-input input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 100%;
+    }
     .weekdays {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
-      margin-top: 10px;
+      gap: 8px;
+      margin-top: 5px;
     }
     .weekday-checkbox {
       display: flex;
       align-items: center;
-      gap: 3px;
+      gap: 5px;
+      background-color: #f5f5f5;
+      padding: 5px 10px;
+      border-radius: 15px;
+    }
+    .weekday-checkbox input:checked + label {
+      font-weight: bold;
+      color: #4285f4;
     }
     .status {
       margin-top: 15px;
@@ -40,17 +87,21 @@
       border-radius: 5px;
       background-color: #f0f0f0;
       text-align: center;
+      font-size: 13px;
     }
-    button {
+    .save-button {
       background-color: #4285f4;
       color: white;
       border: none;
-      padding: 8px 15px;
+      padding: 10px 15px;
       border-radius: 4px;
       cursor: pointer;
       font-weight: bold;
+      width: 100%;
+      margin-bottom: 15px;
+      transition: background-color 0.2s;
     }
-    button:hover {
+    .save-button:hover {
       background-color: #3367d6;
     }
     .switch {
@@ -92,27 +143,8 @@
     input:checked + .slider:before {
       transform: translateX(26px);
     }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .toggle-option {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .toggle-description {
-      font-size: 12px;
-      color: #666;
-      margin-top: 5px;
-      margin-bottom: 10px;
-    }
     .manual-actions {
-      margin-top: 20px;
-      border-top: 1px solid #ddd;
-      padding-top: 15px;
+      margin-top: 5px;
     }
     .button-group {
       display: flex;
@@ -121,11 +153,16 @@
     }
     .action-button {
       flex: 1;
-      padding: 8px;
+      padding: 12px 8px;
       border: none;
       border-radius: 4px;
       font-weight: bold;
       cursor: pointer;
+      transition: all 0.2s;
+    }
+    .action-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 3px 5px rgba(0,0,0,0.1);
     }
     .clock-in {
       background-color: #4285f4;
@@ -136,11 +173,13 @@
       color: white;
     }
     .action-status {
-      font-size: 12px;
-      padding: 8px;
+      font-size: 13px;
+      padding: 10px;
       border-radius: 4px;
       text-align: center;
       min-height: 16px;
+      background-color: #f5f5f5;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -154,78 +193,74 @@
       </label>
     </div>
     
-    <div class="form-group">
-      <label>Clock In Time:</label>
-      <div class="time-input">
-        <input type="time" id="clockInTime" value="09:30">
+    <div class="content">
+      <div class="section">
+        <div class="section-title">Schedule Settings</div>
+        <div class="form-group">
+          <label>Clock In Time:</label>
+          <div class="time-input">
+            <input type="time" id="clockInTime" value="09:30">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Clock Out Time:</label>
+          <div class="time-input">
+            <input type="time" id="clockOutTime" value="19:00">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Active Days:</label>
+          <div class="weekdays">
+            <div class="weekday-checkbox">
+              <input type="checkbox" id="monday" checked>
+              <label for="monday">Mon</label>
+            </div>
+            <div class="weekday-checkbox">
+              <input type="checkbox" id="tuesday" checked>
+              <label for="tuesday">Tue</label>
+            </div>
+            <div class="weekday-checkbox">
+              <input type="checkbox" id="wednesday" checked>
+              <label for="wednesday">Wed</label>
+            </div>
+            <div class="weekday-checkbox">
+              <input type="checkbox" id="thursday" checked>
+              <label for="thursday">Thu</label>
+            </div>
+            <div class="weekday-checkbox">
+              <input type="checkbox" id="friday" checked>
+              <label for="friday">Fri</label>
+            </div>
+            <div class="weekday-checkbox">
+              <input type="checkbox" id="saturday">
+              <label for="saturday">Sat</label>
+            </div>
+            <div class="weekday-checkbox">
+              <input type="checkbox" id="sunday">
+              <label for="sunday">Sun</label>
+            </div>
+          </div>
+        </div>
+        
+        <button id="saveButton" class="save-button">Save Settings</button>
+        
+        <div class="status" id="statusMessage">
+          Extension ready. Set your schedule and save.
+        </div>
       </div>
-    </div>
-    
-    <div class="form-group">
-      <label>Clock Out Time:</label>
-      <div class="time-input">
-        <input type="time" id="clockOutTime" value="19:00">
-      </div>
-    </div>
-    
-    <div class="form-group">
-      <label>Active Days:</label>
-      <div class="weekdays">
-        <div class="weekday-checkbox">
-          <input type="checkbox" id="monday" checked>
-          <label for="monday">Mon</label>
-        </div>
-        <div class="weekday-checkbox">
-          <input type="checkbox" id="tuesday" checked>
-          <label for="tuesday">Tue</label>
-        </div>
-        <div class="weekday-checkbox">
-          <input type="checkbox" id="wednesday" checked>
-          <label for="wednesday">Wed</label>
-        </div>
-        <div class="weekday-checkbox">
-          <input type="checkbox" id="thursday" checked>
-          <label for="thursday">Thu</label>
-        </div>
-        <div class="weekday-checkbox">
-          <input type="checkbox" id="friday" checked>
-          <label for="friday">Fri</label>
-        </div>
-        <div class="weekday-checkbox">
-          <input type="checkbox" id="saturday">
-          <label for="saturday">Sat</label>
-        </div>
-        <div class="weekday-checkbox">
-          <input type="checkbox" id="sunday">
-          <label for="sunday">Sun</label>
+      
+      <div class="section">
+        <div class="section-title">Manual Controls</div>
+        <div class="manual-actions">
+          <div class="button-group">
+            <button id="manualClockIn" class="action-button clock-in">Clock In Now</button>
+            <button id="manualClockOut" class="action-button clock-out">Clock Out Now</button>
+          </div>
+          <div id="actionStatus" class="action-status">Current status will appear here</div>
         </div>
       </div>
-    </div>
-    
-    <div class="form-group">
-      <div class="toggle-option">
-        <label for="smartToggle">Smart Toggle:</label>
-        <div class="toggle-description">Automatically detect and toggle between clock in/out based on current status</div>
-        <label class="switch">
-          <input type="checkbox" id="smartToggle" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
-    
-    <button id="saveButton">Save Settings</button>
-    
-    <div class="status" id="statusMessage">
-      Extension ready. Set your schedule and save.
-    </div>
-    
-    <div class="manual-actions">
-      <h3>Manual Actions</h3>
-      <div class="button-group">
-        <button id="manualClockIn" class="action-button clock-in">Clock In Now</button>
-        <button id="manualClockOut" class="action-button clock-out">Clock Out Now</button>
-      </div>
-      <div id="actionStatus" class="action-status"></div>
     </div>
   </div>
   <script src="popup.js"></script>

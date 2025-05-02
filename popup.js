@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', function() {
     friday: true,
     saturday: false,
     sunday: false,
-    smartToggle: true,
     lastClockInDate: '',
     lastClockOutDate: ''
   }, function(items) {
@@ -25,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('friday').checked = items.friday;
     document.getElementById('saturday').checked = items.saturday;
     document.getElementById('sunday').checked = items.sunday;
-    document.getElementById('smartToggle').checked = items.smartToggle;
     
     updateStatusMessage(items);
     
@@ -45,8 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
       thursday: document.getElementById('thursday').checked,
       friday: document.getElementById('friday').checked,
       saturday: document.getElementById('saturday').checked,
-      sunday: document.getElementById('sunday').checked,
-      smartToggle: document.getElementById('smartToggle').checked
+      sunday: document.getElementById('sunday').checked
     };
     
     chrome.storage.sync.set(settings, function() {
@@ -309,9 +306,8 @@ function updateStatusMessageWithData(settings, statusMessage) {
     if (settings.sunday) activeDays.push('Sun');
     
     const daysText = activeDays.length > 0 ? activeDays.join(', ') : 'No days selected';
-    const smartToggleText = settings.smartToggle ? ' with smart toggle' : '';
     
-    statusMessage.textContent = `Active${smartToggleText}: Clock in at ${settings.clockInTime}, clock out at ${settings.clockOutTime} on ${daysText}`;
+    statusMessage.textContent = `Active: Clock in at ${settings.clockInTime}, clock out at ${settings.clockOutTime} on ${daysText}`;
     statusMessage.style.backgroundColor = '#d4edda';
   } else {
     statusMessage.textContent = 'Auto clock in/out is disabled';

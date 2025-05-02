@@ -47,6 +47,8 @@ function checkAndPerformAction() {
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
   
+  console.log(`Checking schedule at ${currentHour}:${currentMinute}`);
+  
   // Map day of week to settings property
   const dayMap = {
     0: 'sunday',
@@ -70,48 +72,39 @@ function checkAndPerformAction() {
     saturday: false,
     sunday: false,
     lastClockInDate: '',
-    lastClockOutDate: '',
-    smartToggle: true // New setting for smart toggling
+    lastClockOutDate: ''
   }, function(settings) {
-    if (!settings.enabled) return;
+    if (!settings.enabled) {
+      console.log('Auto clock is disabled');
+      return;
+    }
     
     // Check if today is an active day
     const todayActive = settings[dayMap[dayOfWeek]];
-    if (!todayActive) return;
+    if (!todayActive) {
+      console.log('Today is not an active day');
+      return;
+    }
     
     // Parse clock in/out times
     const [inHour, inMinute] = settings.clockInTime.split(':').map(Number);
     const [outHour, outMinute] = settings.clockOutTime.split(':').map(Number);
     
+    console.log(`Scheduled times - In: ${inHour}:${inMinute}, Out: ${outHour}:${outMinute}`);
+    
     // Format today's date as YYYY-MM-DD for comparison
     const today = now.toISOString().split('T')[0];
     
-    // Smart toggle functionality
-    if (settings.smartToggle) {
-      // If it's time to check status
-      const isTimeToCheck = (
-        (currentHour === inHour && currentMinute === inMinute) || 
-        (currentHour === outHour && currentMinute === outMinute)
-      );
-      
-      if (isTimeToCheck) {
-        console.log('Time to check clock status and toggle if needed');
-        checkCurrentStatusAndToggle(today);
-        return;
-      }
-    } else {
-      // Original functionality without smart toggle
-      // Check if we need to clock in
-      if (currentHour === inHour && currentMinute === inMinute && settings.lastClockInDate !== today) {
-        console.log('Time to clock in!');
-        performClockAction('in', today);
-      }
-      
-      // Check if we need to clock out
-      if (currentHour === outHour && currentMinute === outMinute && settings.lastClockOutDate !== today) {
-        console.log('Time to clock out!');
-        performClockAction('out', today);
-      }
+    // Check if we need to clock in
+    if (currentHour === inHour && currentMinute === inMinute && settings.lastClockInDate !== today) {
+      console.log('Time to clock in!');
+      performClockAction('in', today);
+    }
+    
+    // Check if we need to clock out
+    if (currentHour === outHour && currentMinute === outMinute && settings.lastClockOutDate !== today) {
+      console.log('Time to clock out!');
+      performClockAction('out', today);
     }
   });
 }
