@@ -80,33 +80,34 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     updateStatusMessage({ enabled: enabled });
   });
-  
-  // Add a test button to the status message
-  const statusMessage = document.getElementById("statusMessage");
-  const testButton = document.createElement("button");
-  testButton.textContent = "Test Scheduling";
-  testButton.style.marginTop = "10px";
-  testButton.style.padding = "5px 10px";
-  testButton.style.backgroundColor = "#4285f4";
-  testButton.style.color = "white";
-  testButton.style.border = "none";
-  testButton.style.borderRadius = "4px";
-  testButton.style.cursor = "pointer";
-  testButton.addEventListener("click", function() {
-    statusMessage.innerHTML = "Testing auto schedule function... Check extension logs for details.";
-    // Trigger a manual check in the background script
-    chrome.runtime.sendMessage({ action: "checkStatus" }, function(response) {
-      console.log("Manual check response:", response);
-      // Add the test button back after testing
-      setTimeout(() => {
-        statusMessage.innerText = "Manual check completed. Check extension logs.";
-        statusMessage.appendChild(document.createElement("br"));
-        statusMessage.appendChild(testButton);
-      }, 2000);
+
+  // Test scheduling button handler
+  document
+    .getElementById("testScheduleButton")
+    .addEventListener("click", function () {
+      const statusMessage = document.getElementById("statusMessage");
+      statusMessage.textContent =
+        "Testing auto scheduling... This will perform a clock action now!";
+      statusMessage.style.backgroundColor = "#f0f0f0";
+
+      // Set flag for test run using chrome.storage.local
+      chrome.storage.local.set({ testSchedulingRun: true });
+
+      // Trigger a manual check in the background script
+      chrome.runtime.sendMessage(
+        { action: "checkStatus", isTest: true },
+        function (response) {
+          console.log("Manual check response:", response);
+
+          // Update status after testing
+          setTimeout(() => {
+            statusMessage.textContent =
+              "Test completed! Check the Keka website to verify the action.";
+            statusMessage.style.backgroundColor = "#d4edda";
+          }, 5000);
+        }
+      );
     });
-  });
-  statusMessage.appendChild(document.createElement("br"));
-  statusMessage.appendChild(testButton);
 
   // Manual clock in button
   document
