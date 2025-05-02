@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Keka Auto Clock In/Out",
+  "name": "PunchMate: Keka Attendance Automation",
   "version": "1.0",
   "description": "Automatically clock in and out on Keka at scheduled times",
   "permissions": ["storage", "alarms", "scripting", "tabs", "activeTab"],
