@@ -10,6 +10,13 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     console.log("Settings updated, reconfiguring alarms");
     setupAlarms();
   }
+  if (message.action === "checkStatus") {
+    // For debugging - triggers a manual check
+    console.log("Manual check requested");
+    checkAndPerformAction();
+    if (sendResponse) sendResponse({status: "Checking now"});
+  }
+  return true; // Keep the message channel open for async responses
 });
 
 // Listen for alarm triggers
@@ -36,6 +43,9 @@ function setupAlarms() {
           periodInMinutes: 1,
         });
         console.log("Alarm set to check clock status every minute");
+        
+        // Trigger an immediate check after settings are updated
+        setTimeout(checkAndPerformAction, 1000);
       } else {
         console.log("Auto clock is disabled, no alarms set");
       }
@@ -45,13 +55,20 @@ function setupAlarms() {
 
 // Check if we need to clock in or out based on current time and settings
 function checkAndPerformAction() {
+  // Use IST timezone (UTC+5:30)
   const now = new Date();
+  // Convert to IST by adding 5 hours and 30 minutes to UTC time (if needed)
+  // This is already handled by the system time if running in IST
+  
   const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
   const currentTimeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+  
+  // Calculate current time in minutes for easier comparison
+  const currentTotalMinutes = currentHour * 60 + currentMinute;
 
-  console.log(`Checking schedule at ${currentTimeString}`);
+  console.log(`Checking schedule at ${currentTimeString} (IST)`);
 
   // Map day of week to settings property
   const dayMap = {
@@ -78,6 +95,7 @@ function checkAndPerformAction() {
       sunday: false,
       lastClockInDate: "",
       lastClockOutDate: "",
+      bufferMinutes: 5, // Default buffer time of 5 minutes
     },
     function (settings) {
       if (!settings.enabled) {
@@ -95,23 +113,57 @@ function checkAndPerformAction() {
       // Format today's date as YYYY-MM-DD for comparison
       const today = now.toISOString().split("T")[0];
       
-      // Check for clock in time
-      if (currentTimeString === settings.clockInTime && settings.lastClockInDate !== today) {
-        console.log(`Time to clock in! Current time: ${currentTimeString}, Scheduled time: ${settings.clockInTime}`);
-        performClockAction("in", today);
-        return;
+      // Convert scheduled times to minutes for comparison
+      const [inHour, inMinute] = settings.clockInTime.split(':').map(Number);
+      const [outHour, outMinute] = settings.clockOutTime.split(':').map(Number);
+      
+      const clockInMinutes = inHour * 60 + inMinute;
+      const clockOutMinutes = outHour * 60 + outMinute;
+      
+      // Get buffer time from settings (default: 5 minutes)
+      const bufferMinutes = parseInt(settings.bufferMinutes) || 5;
+      
+      console.log(`Current time: ${currentTimeString} (${currentTotalMinutes} mins)`);
+      console.log(`Clock in time: ${settings.clockInTime} (${clockInMinutes} mins)`);
+      console.log(`Clock out time: ${settings.clockOutTime} (${clockOutMinutes} mins)`);
+      console.log(`Buffer minutes: ${bufferMinutes}`);
+      console.log(`Last clock in: ${settings.lastClockInDate}, Last clock out: ${settings.lastClockOutDate}`);
+      
+      // Check if it's time to clock in - more robust check
+      if (settings.lastClockInDate !== today) {
+        // Fixed simplified logic - check if we're within buffer time of the scheduled time
+        if (Math.abs(currentTotalMinutes - clockInMinutes) <= bufferMinutes) {
+          console.log(`Time to clock in! Current time: ${currentTimeString}, Scheduled time: ${settings.clockInTime}`);
+          performClockAction("in", today);
+          return;
+        }
+        
+        // Or if we're past the clock in time (within a reasonable window of 2 hours)
+        if (currentTotalMinutes > clockInMinutes && currentTotalMinutes < clockInMinutes + 120) {
+          console.log(`Past scheduled clock in time! Current time: ${currentTimeString}, Scheduled time: ${settings.clockInTime}`);
+          performClockAction("in", today);
+          return;
+        }
       }
       
-      // Check for clock out time
-      if (currentTimeString === settings.clockOutTime && settings.lastClockOutDate !== today) {
-        console.log(`Time to clock out! Current time: ${currentTimeString}, Scheduled time: ${settings.clockOutTime}`);
-        performClockAction("out", today);
-        return;
+      // Check if it's time to clock out - more robust check
+      if (settings.lastClockOutDate !== today) {
+        // Fixed simplified logic - check if we're within buffer time of the scheduled time
+        if (Math.abs(currentTotalMinutes - clockOutMinutes) <= bufferMinutes) {
+          console.log(`Time to clock out! Current time: ${currentTimeString}, Scheduled time: ${settings.clockOutTime}`);
+          performClockAction("out", today);
+          return;
+        }
+        
+        // Or if we're past the clock out time (within a reasonable window of 2 hours)
+        if (currentTotalMinutes > clockOutMinutes && currentTotalMinutes < clockOutMinutes + 120) {
+          console.log(`Past scheduled clock out time! Current time: ${currentTimeString}, Scheduled time: ${settings.clockOutTime}`);
+          performClockAction("out", today);
+          return;
+        }
       }
       
-      // Log scheduled times for debugging
-      console.log(`Waiting for scheduled times - In: ${settings.clockInTime}, Out: ${settings.clockOutTime}`);
-      console.log(`Last clock in date: ${settings.lastClockInDate}, Last clock out date: ${settings.lastClockOutDate}`);
+      console.log(`No action needed at current time: ${currentTimeString}`);
     }
   );
 }
