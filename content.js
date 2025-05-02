@@ -39,6 +39,41 @@ function performClockAction(action) {
               action === "in" ? "Clock In" : "Clock Out"
             } button using class selector`
           );
+
+          // For clock out, we need to click twice to confirm
+          if (action === "out") {
+            // Wait for the confirmation button to appear
+            setTimeout(() => {
+              // Try to find the confirmation button (usually the same button or a confirmation dialog button)
+              const confirmSelector = "button.btn.btn-danger";
+              waitForElement(confirmSelector, 5)
+                .then((confirmButton) => {
+                  if (confirmButton) {
+                    confirmButton.click();
+                    console.log(
+                      "Clicked the confirmation button for Clock Out"
+                    );
+                  } else {
+                    // If we can't find a specific confirmation button, try clicking the original button again
+                    button.click();
+                    console.log(
+                      "Clicked the Clock Out button again for confirmation"
+                    );
+                  }
+                })
+                .catch((error) => {
+                  console.error(
+                    "Error waiting for confirmation button:",
+                    error
+                  );
+                  // Fallback: just click the original button again
+                  button.click();
+                  console.log(
+                    "Fallback: Clicked the Clock Out button again for confirmation"
+                  );
+                });
+            }, 1000); // Wait 1 second for the confirmation dialog to appear
+          }
         } else {
           // If class selector fails, try the full path selector
           console.log("Class selector failed, trying full path selector");
@@ -57,6 +92,41 @@ function performClockAction(action) {
                       action === "in" ? "Clock In" : "Clock Out"
                     } button using full path selector`
                   );
+
+                  // For clock out, we need to click twice to confirm
+                  if (action === "out") {
+                    // Wait for the confirmation button to appear
+                    setTimeout(() => {
+                      // Try to find the confirmation button
+                      const confirmSelector = "button.btn.btn-danger";
+                      waitForElement(confirmSelector, 5)
+                        .then((confirmButton) => {
+                          if (confirmButton) {
+                            confirmButton.click();
+                            console.log(
+                              "Clicked the confirmation button for Clock Out"
+                            );
+                          } else {
+                            // If we can't find a specific confirmation button, try clicking the original button again
+                            pathButton.click();
+                            console.log(
+                              "Clicked the Clock Out button again for confirmation"
+                            );
+                          }
+                        })
+                        .catch((error) => {
+                          console.error(
+                            "Error waiting for confirmation button:",
+                            error
+                          );
+                          // Fallback: just click the original button again
+                          pathButton.click();
+                          console.log(
+                            "Fallback: Clicked the Clock Out button again for confirmation"
+                          );
+                        });
+                    }, 1000); // Wait 1 second for the confirmation dialog to appear
+                  }
                 } else {
                   console.log(
                     `Button found but text doesn't match expected action: ${buttonText}`
