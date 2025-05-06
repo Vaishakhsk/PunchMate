@@ -191,49 +191,84 @@ function checkAndPerformAction() {
       
       // First open the Keka page and check the current state
       function checkClockState(callback) {
-        // Find the Keka tab or open it if not exists
-        chrome.tabs.query({ url: "https://newstreet.keka.com/*" }, function (tabs) {
-          if (tabs.length > 0) {
-            // Keka is already open, navigate to dashboard if needed
-            chrome.tabs.update(
-              tabs[0].id,
-              {
-                active: true,
-                url: "https://newstreet.keka.com/#/home/dashboard",
-              },
-              function (tab) {
-                // Wait for page to load before checking the state
-                setTimeout(() => {
-                  chrome.scripting.executeScript(
-                    {
-                      target: { tabId: tab.id },
-                      function: detectClockState
-                    },
-                    callback
-                  );
-                }, 10000); // Give the page time to load
-              }
-            );
-          } else {
-            // Open Keka in a new tab
-            chrome.tabs.create(
-              {
-                url: "https://newstreet.keka.com/#/home/dashboard",
-              },
-              function (tab) {
-                // Wait for page to load before checking the state
-                setTimeout(() => {
-                  chrome.scripting.executeScript(
-                    {
-                      target: { tabId: tab.id },
-                      function: detectClockState
-                    },
-                    callback
-                  );
-                }, 15000); // Give the page more time to load for a new tab
-              }
-            );
+        // Store the currently active tab so we can return to it later
+        let activeTabId = null;
+        chrome.tabs.query({ active: true, currentWindow: true }, function(activeTabs) {
+          if (activeTabs.length > 0) {
+            activeTabId = activeTabs[0].id;
+            console.log("Saved active tab ID:", activeTabId);
           }
+          
+          // Find the Keka tab or open it if not exists
+          chrome.tabs.query({ url: "https://newstreet.keka.com/*" }, function (tabs) {
+            if (tabs.length > 0) {
+              // Keka is already open, navigate to dashboard if needed
+              // Note: active: false ensures the tab doesn't get focus
+              chrome.tabs.update(
+                tabs[0].id,
+                {
+                  active: false,
+                  url: "https://newstreet.keka.com/#/home/dashboard",
+                },
+                function (tab) {
+                  // Wait for page to load before checking the state
+                  setTimeout(() => {
+                    chrome.scripting.executeScript(
+                      {
+                        target: { tabId: tab.id },
+                        function: detectClockState
+                      },
+                      function(results) {
+                        // After operation, restore focus to the previously active tab if needed
+                        if (activeTabId) {
+                          chrome.tabs.update(activeTabId, { active: true }, function() {
+                            console.log("Restored focus to original tab:", activeTabId);
+                            // Now call the original callback with the results
+                            callback(results);
+                          });
+                        } else {
+                          // No active tab was saved, just call the callback
+                          callback(results);
+                        }
+                      }
+                    );
+                  }, 10000); // Give the page time to load
+                }
+              );
+            } else {
+              // Open Keka in a new tab (in the background)
+              chrome.tabs.create(
+                {
+                  url: "https://newstreet.keka.com/#/home/dashboard",
+                  active: false // Open in background
+                },
+                function (tab) {
+                  // Wait for page to load before checking the state
+                  setTimeout(() => {
+                    chrome.scripting.executeScript(
+                      {
+                        target: { tabId: tab.id },
+                        function: detectClockState
+                      },
+                      function(results) {
+                        // After operation, restore focus to the previously active tab if needed
+                        if (activeTabId) {
+                          chrome.tabs.update(activeTabId, { active: true }, function() {
+                            console.log("Restored focus to original tab:", activeTabId);
+                            // Now call the original callback with the results
+                            callback(results);
+                          });
+                        } else {
+                          // No active tab was saved, just call the callback
+                          callback(results);
+                        }
+                      }
+                    );
+                  }, 15000); // Give the page more time to load for a new tab
+                }
+              );
+            }
+          });
         });
       }
       
@@ -526,56 +561,67 @@ function performClockAction(action, today) {
   
   // First verify if we're already logged in, and if not, need to handle login
   function openAndPrepareKeka(callback) {
-    // Find the Keka tab or open it if not exists
-    chrome.tabs.query({ url: "https://newstreet.keka.com/*" }, function (tabs) {
-      if (tabs.length > 0) {
-        // Keka is already open, navigate to dashboard if needed
-        console.log('Keka tab found, navigating to dashboard...');
-        chrome.tabs.update(
-          tabs[0].id,
-          {
-            active: true,
-            url: "https://newstreet.keka.com/#/home/dashboard",
-          },
-          function (tab) {
-            // Use webNavigation to detect when page has truly finished loading
-            console.log(`Tab navigating to dashboard, will wait for complete load...`);
-            // Wait longer for the page to completely load (Single Page Apps need more time)
-            setTimeout(() => {
-              console.log(`Page should be loaded now, executing ${action} action`);
-              callback(tab.id);
-            }, 15000); // Wait 15 seconds for page to fully load and render
-          }
-        );
-      } else {
-        // Open Keka in a new tab
-        console.log(`No Keka tab found, opening a new tab...`);
-        chrome.tabs.create(
-          {
-            url: "https://newstreet.keka.com/#/home/dashboard",
-          },
-          function (tab) {
-            // Wait even longer for login and initial page load
-            console.log(`New tab opened, waiting for login and page load...`);
-            setTimeout(() => {
-              console.log(`New tab should be loaded now, executing ${action} action`);
-              callback(tab.id);
-            }, 20000); // Wait 20 seconds for page to fully load, login process to complete
-          }
-        );
+    // Store the currently active tab so we can return to it later
+    let activeTabId = null;
+    chrome.tabs.query({ active: true, currentWindow: true }, function(activeTabs) {
+      if (activeTabs.length > 0) {
+        activeTabId = activeTabs[0].id;
+        console.log("Saved active tab ID before clock action:", activeTabId);
       }
+      
+      // Find the Keka tab or open it if not exists
+      chrome.tabs.query({ url: "https://newstreet.keka.com/*" }, function (tabs) {
+        if (tabs.length > 0) {
+          // Keka is already open, navigate to dashboard if needed
+          console.log('Keka tab found, navigating to dashboard...');
+          chrome.tabs.update(
+            tabs[0].id,
+            {
+              active: false, // Keep in background
+              url: "https://newstreet.keka.com/#/home/dashboard",
+            },
+            function (tab) {
+              // Use webNavigation to detect when page has truly finished loading
+              console.log(`Tab navigating to dashboard, will wait for complete load...`);
+              // Wait longer for the page to completely load (Single Page Apps need more time)
+              setTimeout(() => {
+                console.log(`Page should be loaded now, executing ${action} action`);
+                callback(tab.id, activeTabId);
+              }, 15000); // Wait 15 seconds for page to fully load and render
+            }
+          );
+        } else {
+          // Open Keka in a new tab (in background)
+          console.log(`No Keka tab found, opening a new tab in background...`);
+          chrome.tabs.create(
+            {
+              url: "https://newstreet.keka.com/#/home/dashboard",
+              active: false // Keep in background
+            },
+            function (tab) {
+              // Wait even longer for login and initial page load
+              console.log(`New tab opened, waiting for login and page load...`);
+              setTimeout(() => {
+                console.log(`New tab should be loaded now, executing ${action} action`);
+                callback(tab.id, activeTabId);
+              }, 20000); // Wait 20 seconds for page to fully load, login process to complete
+            }
+          );
+        }
+      });
     });
   }
   
   // Start the process
-  openAndPrepareKeka(function(tabId) {
-    executeClockAction(tabId, action, today);
+  openAndPrepareKeka(function(tabId, originalTabId) {
+    executeClockAction(tabId, action, today, originalTabId);
   });
 }
 
 // Execute the clock action via content script with retry logic
-function executeClockAction(tabId, action, today) {
+function executeClockAction(tabId, action, today, originalTabId) {
   console.log(`Preparing to execute ${action} action with multiple attempts...`);
+  console.log(`Will restore focus to tab ${originalTabId} after completion`);
   
   // Make multiple attempts with increasing delays
   let attempts = 0;
@@ -632,6 +678,17 @@ function executeClockAction(tabId, action, today) {
 
             chrome.storage.sync.set(updateObj, function () {
               console.log(`Successfully clocked ${action} and updated storage with detected state: ${result.actualState}`);
+              
+              // Restore focus to original tab if it exists
+              if (originalTabId) {
+                chrome.tabs.update(originalTabId, { active: true }, function() {
+                  if (chrome.runtime.lastError) {
+                    console.error("Error restoring focus to original tab:", chrome.runtime.lastError.message);
+                  } else {
+                    console.log("Successfully restored focus to original tab:", originalTabId);
+                  }
+                });
+              }
             });
           } else {
             // The script ran but couldn't find or click the button
