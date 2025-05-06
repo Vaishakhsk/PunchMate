@@ -1,7 +1,16 @@
+// Keep service worker alive with periodic pings
+const KEEP_ALIVE_INTERVAL_MINUTES = 5;
+
 // Initialize alarms when extension is installed or updated
 chrome.runtime.onInstalled.addListener(function () {
   console.log("Keka Auto Clock extension installed/updated");
   setupAlarms();
+  
+  // Create a keep-alive alarm
+  chrome.alarms.create("keepServiceWorkerAlive", {
+    periodInMinutes: KEEP_ALIVE_INTERVAL_MINUTES
+  });
+  console.log(`Keep-alive alarm set for every ${KEEP_ALIVE_INTERVAL_MINUTES} minutes`);
 });
 
 // Listen for setting changes
@@ -23,6 +32,10 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       if (sendResponse) sendResponse({status: "Checking now"});
     }
   }
+  if (message.action === "contentScriptLoaded") {
+    console.log("Content script loaded confirmation received from:", sender.tab ? sender.tab.url : "unknown source");
+    if (sendResponse) sendResponse({status: "Background worker acknowledged"});
+  }
   return true; // Keep the message channel open for async responses
 });
 
@@ -30,6 +43,10 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 chrome.alarms.onAlarm.addListener(function (alarm) {
   if (alarm.name === "checkClockStatus") {
     checkAndPerformAction();
+  } else if (alarm.name === "keepServiceWorkerAlive") {
+    console.log(`Service worker keep-alive ping at ${new Date().toLocaleTimeString()}`);
+    // You can add additional code here to perform any lightweight activity
+    // that will keep the service worker active
   }
 });
 

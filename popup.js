@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+  try {
   // Load saved settings
   chrome.storage.sync.get(
     {
@@ -82,9 +83,9 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Test scheduling button handler
-  document
-    .getElementById("testScheduleButton")
-    .addEventListener("click", function () {
+  const testScheduleButton = document.getElementById("testScheduleButton");
+  if (testScheduleButton) {
+    testScheduleButton.addEventListener("click", function () {
       const statusMessage = document.getElementById("statusMessage");
       statusMessage.textContent =
         "Testing auto scheduling... This will perform a clock action now!";
@@ -108,6 +109,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       );
     });
+  } else {
+    console.log("Test schedule button not found in the DOM");
+  }
 
   // Manual clock in button
   document
@@ -194,6 +198,18 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     });
+  } catch (error) {
+    console.error("Error in popup initialization:", error);
+    // Display error to user
+    const errorElement = document.createElement('div');
+    errorElement.style.color = '#ff5252';
+    errorElement.style.padding = '10px';
+    errorElement.style.margin = '10px';
+    errorElement.style.backgroundColor = 'rgba(255, 82, 82, 0.1)';
+    errorElement.style.borderRadius = '8px';
+    errorElement.textContent = 'An error occurred while loading the extension. Please try reloading.';
+    document.body.prepend(errorElement);
+  }
 });
 
 // Helper function to send clock in message to content script

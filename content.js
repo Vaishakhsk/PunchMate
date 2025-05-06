@@ -1,6 +1,17 @@
 // This script is injected into the Keka website
 console.log("Keka Auto Clock content script loaded");
 
+// Set up global error handler to catch and log any errors
+window.addEventListener('error', function(event) {
+  console.error('Content script error caught:', event.error || event.message);
+  return false;
+});
+
+// Report that content script is healthy
+chrome.runtime.sendMessage({ action: "contentScriptLoaded" }, function(response) {
+  console.log("Content script reported as loaded");
+});
+
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.action === "clockIn") {
